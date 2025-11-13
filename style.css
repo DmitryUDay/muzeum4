@@ -5,6 +5,10 @@ body{
   font-family: "Comfortaa", sans-serif;
 }
 
+h1,p{
+  color: #2e2b29;
+}
+
 
 .banner {
   position: relative;
@@ -167,10 +171,10 @@ body{
   /* Крестик закрытия */
   .modal-close {
     position: absolute;
-    right: 15px; top: 15px;
+    right: 15px; top: 0px;
     font-size: 24px;
     cursor: pointer;
-    color: #333;
+    color: #000000;
   }
 
   /* Поле поиска */
@@ -185,7 +189,7 @@ body{
     transition: border-color 0.3s ease;
   }
   .search-input:focus {
-    border-color: #58a5b9;
+    border-color: #c7bca5;
   }
 
   /* Результаты поиска */
@@ -223,7 +227,7 @@ body{
   .show-more {
     margin: 10px auto 0;
     padding: 8px 20px;
-    background: #58a5b9;
+    background: black;
     color: white;
     border: none;
     border-radius: 25px;
@@ -248,3 +252,96 @@ body{
     animation: typing 3s steps(30) infinite;
     display: inline-block;
   }
+
+
+
+/* ===== МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ===== */
+.modal-add {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 10, 10, 0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-add.open {
+  display: flex;
+}
+
+.modal-add-content {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 450px;
+  width: 90%;
+  padding: 20px;
+  position: relative;
+  animation: slideUp 0.4s ease;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+.modal-add-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 22px;
+  cursor: pointer;
+  color: #333;
+  transition: 0.3s;
+}
+.modal-add-close:hover {
+  color: red;
+}
+
+.rules-box {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 10px;
+  height: 160px;
+  overflow-y: auto;
+  margin: 10px 0 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.agree-box {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.request-btn {
+  background: #999;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: not-allowed;
+  width: 100%;
+  font-size: 16px;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.request-btn.enabled {
+  background: #2e7d32;
+  cursor: pointer;
+}
+.request-btn.enabled:hover {
+  background: #388e3c;
+  transform: scale(1.02);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

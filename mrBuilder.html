@@ -1,132 +1,97 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Просмотр карточки</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f9f9f9;
-    color: #222;
-  }
-  .container {
-    max-width: 600px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-  }
-  h1 {
-    font-size: 24px;
-    margin-bottom: 15px;
-  }
-  img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 10px;
-    margin-bottom: 15px;
-  }
-  p {
-    font-size: 16px;
-    line-height: 1.5;
-  }
-  button.back-btn {
-    margin-top: 25px;
-    padding: 10px 20px;
-    background: #58a5b9;
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-  }
-  button.back-btn:hover {
-    background: #417f8a;
-  }
-  .error {
-    color: red;
-    font-weight: 600;
-    text-align: center;
-  }
-</style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Карточка</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="builderStyle.css">
+
+
 </head>
 <body>
 
-<div class="container" id="cardContainer">
-  <p>Загрузка данных...</p>
+<button class="exit" id="exitBtn" title="Назад">←</button>
+<br>
+<div class="wrap">
+  <div class="title">
+    <div class="badge" id="categoryBadge">Категория</div>
+    <div>
+      <h1 id="cardTitle">Название</h1>
+      <div class="meta" id="cardMeta">Класс</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="media">
+      <img id="cardImage" src="" alt="Изображение">
+    </div>
+    <div class="content">
+      <div class="desc" id="cardText">Описание</div>
+    </div>
+  </div>
 </div>
 
 <script>
-  function getQueryParams() {
-    const params = {};
-    const queryString = window.location.search.substring(1);
-    const pairs = queryString.split("&");
-    for (let pair of pairs) {
-      const [key, value] = pair.split("=");
-      if (key && value) {
-        params[decodeURIComponent(key)] = decodeURIComponent(value);
-      }
-    }
-    return params;
-  }
+  // Получаем параметры из URL
+  const params = new URLSearchParams(window.location.search);
+  const category = params.get("category");
+  const id = params.get("id");
 
-  function showError(message) {
-    const container = document.getElementById('cardContainer');
-    container.innerHTML = `<div class="error">${message}</div>`;
-  }
-
-  function renderCard(item) {
-    const container = document.getElementById('cardContainer');
-    container.innerHTML = `
-      <h1>${item.title || 'Без названия'}</h1>
-      <img src="${item.image || 'https://via.placeholder.com/600x400?text=Нет+изображения'}" alt="${item.title || ''}" />
-      <p>${item.text || 'Описание отсутствует'}</p>
-      <button class="back-btn" id="backBtn">Назад</button>
-    `;
-
-    document.getElementById('backBtn').addEventListener('click', () => {
-      window.location.href = "index.html";
-    });
-  }
-
-  (async () => {
-    const params = getQueryParams();
-
-    if (!params.id) {
-      showError('Некорректные параметры в URL: отсутствует id.');
-      return;
-    }
-
+  // Загружаем JSON
+  async function loadData() {
     try {
-      const response = await fetch('data.json');
-      if (!response.ok) throw new Error('Не удалось загрузить data.json');
-
+      const response = await fetch("data.json");
       const data = await response.json();
 
-      let item = null;
-
-      // Ищем карточку по id во всех категориях
-      for (const category in data) {
-        if (!data.hasOwnProperty(category)) continue;
-        item = data[category].find(el => String(el.id) === params.id);
-        if (item) break;
-      }
-
-      if (!item) {
-        showError(`Карточка с id "${params.id}" не найдена.`);
+      if (!data[category]) {
+        document.getElementById("cardText").textContent = "Категория не найдена.";
         return;
       }
 
-      renderCard(item);
+      const item = data[category].find(el => el.id === id);
+      if (!item) {
+        document.getElementById("cardText").textContent = "Экспонат не найден.";
+        return;
+      }
 
-    } catch (e) {
-      showError('Ошибка загрузки данных: ' + e.message);
+      // Заполняем страницу
+      if (category == 'life'){
+          helpa = 'Предметы быта';
+      }else if (category == 'family'){
+          helpa = 'История семьи';
+      }else if (category == 'war'){
+          helpa = 'ВОВ';
+      }else if (category == 'clothes'){
+          helpa = 'Одежда';
+        }else{
+          helpa = 'Error';
+      }
+      document.getElementById("categoryBadge").textContent = helpa.toUpperCase();
+      document.getElementById("cardTitle").textContent = item.title || "Без названия";
+      document.getElementById("cardMeta").textContent = item.buk ? `Класс ${item.buk}` : "";
+      document.getElementById("cardText").textContent = item.text || "";
+      document.getElementById("cardImage").src = item.image || "";
+      document.getElementById("cardImage").alt = item.title || "";
+    } catch (err) {
+      console.error("Ошибка загрузки данных:", err);
+      document.getElementById("cardText").textContent = "Ошибка при загрузке данных.";
     }
-  })();
+  }
+
+  loadData();
+
+  // Кнопка "Назад"
+  document.getElementById("exitBtn").addEventListener("click", () => {
+    if (document.referrer) window.history.back();
+    else window.location.href = "index.html";
+  });
+
+  // ESC для возврата
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape") document.getElementById("exitBtn").click();
+  });
 </script>
 
 </body>

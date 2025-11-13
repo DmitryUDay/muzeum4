@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build page</title>
+<link rel="stylesheet" href="madamaStyle.css">
+</head>
+<body>
+
+<button class="exit" id="exitBtn" title="Назад">←</button>
+<br>
+<div class="wrap">
+  <div class="title">
+    <div class="badge" id="categoryBadge">Категория</div>
+  </div>
+</div>
+
+
+
+
+
+
+<div class="container" id="cardsContainer"></div>
+
+<button id="showMoreBtn">Показать ещё</button>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const tip = params.get("tip"); // категория
+  const container = document.getElementById("cardsContainer");
+  const titleEl = document.getElementById("categoryBadge");
+  const showMoreBtn = document.getElementById("showMoreBtn");
+  const PAGE_SIZE = 15;
+  let displayedCount = 0;
+  let currentCards = [];
+
+  async function loadData() {
+    try {
+      const res = await fetch("data.json");
+      if (!res.ok) throw new Error("Ошибка загрузки JSON");
+      return await res.json();
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = `<div class='error'>Ошибка загрузки данных</div>`;
+    }
+  }
+
+  function shortenText(text, limit) {
+    if (!text) return "";
+    return text.length > limit ? text.slice(0, limit) + "..." : text;
+  }
+
+  function renderCards() {
+    const toShow = currentCards.slice(0, displayedCount);
+    container.innerHTML = "";
+    toShow.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img src="${item.image || 'https://via.placeholder.com/400x300?text=Нет+фото'}" alt="${item.title}">
+        <div class="overlay">
+          <h2>${item.title}</h2>
+          <p>${shortenText(item.text, 40)}</p>
+        </div>
+      `;
+      card.onclick = () => {
+        window.location.href = `mrBuilder.html?category=${encodeURIComponent(tip)}&id=${encodeURIComponent(item.id)}`;
+      };
+      container.appendChild(card);
+    });
+
+    // Показать / скрыть кнопку "Показать ещё"
+    if (displayedCount < currentCards.length) {
+      showMoreBtn.style.display = "block";
+    } else {
+      showMoreBtn.style.display = "none";
+    }
+  }
+
+  async function init() {
+    const data = await loadData();
+    if (!data || !tip) {
+      container.innerHTML = `<div class='error'>Категория не найдена</div>`;
+      return;
+    }
+
+    const items = data[tip];
+    if (!items || items.length === 0) {
+      container.innerHTML = `<div class='error'>Нет карточек в категории "${tip}"</div>`;
+      return;
+    }
+
+
+    if (tip == 'life'){
+        helpa = 'Предметы быта';
+    }else if (tip == 'family'){
+        helpa = 'История семьи';
+    }else if (tip == 'war'){
+        helpa = 'ВОВ';
+    }else if (tip == 'clothes'){
+        helpa = 'Одежда';
+    }
+
+
+    titleEl.textContent = helpa;
+
+
+
+    currentCards = items;
+    displayedCount = Math.min(PAGE_SIZE, currentCards.length);
+    renderCards();
+  }
+
+  showMoreBtn.addEventListener("click", () => {
+    displayedCount = Math.min(displayedCount + PAGE_SIZE, currentCards.length);
+    renderCards();
+  });
+
+  function goBack() {
+    window.location.href = "index.html";
+  }
+
+  init();
+  document.getElementById("exitBtn").addEventListener("click", () => {
+    if (document.referrer) window.history.back();
+    else window.location.href = "index.html";
+  });
+
+  // ESC для возврата
+  window.addEventListener("keydown", e => {
+    if (e.key === "Escape") document.getElementById("exitBtn").click();
+  });
+</script>
+
+</body>
+</html>
