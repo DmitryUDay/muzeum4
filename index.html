@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн музей 4 школы</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>
+</head>
+<body>
+
+    <div class="banner">
+        <h1>Добро пожаловать в онлайн музей 4 школы имени Ж. Макеевой</h1>
+    </div>
+
+
+
+
+    <div class="bottom-bar">
+        <div class="btn" id="openSearchBtn" aria-label="Поиск">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Поиск
+        </div>
+        <a href="#" class="btn" aria-label="Добавить">
+            <i class="fa-solid fa-plus"></i>
+            Добавить
+        </a>
+    </div>
+
+    
+<!-- Модальное окно поиска -->
+<div class="modal-search" id="modalSearch" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+  <div class="modal-close" id="modalCloseBtn" title="Закрыть поиск" role="button" aria-label="Закрыть окно поиска">&times;</div>
+  <input
+    id="searchInput"
+    class="search-input"
+    type="search"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="off"
+    spellcheck="false"
+    placeholder="Что будем искать?"
+    aria-describedby="searchHelp"
+  />
+  <div id="results" class="results" role="list"></div>
+  <button id="showMoreBtn" class="show-more">Показать ещё</button>
+</div>
+
+<script>
+  const popularSearches = [
+    "Герб семьи Павловских",
+    "История нашей семьи",
+    "Другая реликвия",
+    "4А",
+    "4Б"
+  ];
+
+  const openSearchBtn = document.getElementById("openSearchBtn");
+  const modalSearch = document.getElementById("modalSearch");
+  const modalCloseBtn = document.getElementById("modalCloseBtn");
+  const searchInput = document.getElementById("searchInput");
+  const resultsContainer = document.getElementById("results");
+  const showMoreBtn = document.getElementById("showMoreBtn");
+
+  let data = null; // сюда загрузим JSON
+  let currentResults = [];
+  let displayedCount = 0;
+  const PAGE_SIZE = 5;
+  let placeholderInterval;
+
+  async function loadData() {
+    try {
+      const response = await fetch('data.json');
+      if (!response.ok) throw new Error("Ошибка загрузки data.json");
+      data = await response.json();
+    } catch (error) {
+      console.error("Не удалось загрузить данные:", error);
+      data = {};
+    }
+  }
+
+  // Анимация placeholder с печатанием популярных фраз
+  function animatePlaceholder(phrases, inputEl) {
+    let index = 0;
+    let charIndex = 0;
+    let currentPhrase = phrases[index];
+
+    return setInterval(() => {
+      if (charIndex <= currentPhrase.length) {
+        inputEl.placeholder = currentPhrase.slice(0, charIndex) + "|";
+        charIndex++;
+      } else {
+        setTimeout(() => {
+          charIndex = 0;
+          index = (index + 1) % phrases.length;
+          currentPhrase = phrases[index];
+        }, 1000);
+      }
+    }, 150);
+  }
+
+  function openModal() {
+    modalSearch.classList.add("open");
+    searchInput.value = "";
+    resultsContainer.innerHTML = "";
+    displayedCount = 0;
+    currentResults = [];
+    searchInput.focus();
+
+    // Запускаем анимацию placeholder
+    placeholderInterval = animatePlaceholder(popularSearches, searchInput);
+  }
+
+  function closeModal() {
+    modalSearch.classList.remove("open");
+    clearInterval(placeholderInterval);
+    searchInput.placeholder = "Что будем искать?";
+  }
+
+  function normalizeStr(str) {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+  }
+
+  // Поиск в data по title или buk во всех категориях
+  function searchInData(query) {
+    if (!query || !data) return [];
+    const normQ = normalizeStr(query);
+    const results = [];
+
+    for (const category in data) {
+      if (!data.hasOwnProperty(category)) continue;
+
+      for (const item of data[category]) {
+        const t = item.title || "";
+        const b = item.buk || "";
+        if (normalizeStr(t).includes(normQ) || normalizeStr(b).includes(normQ)) {
+          results.push({ ...item, category });
+        }
+      }
+    }
+
+    return results;
+  }
+
+  function renderResults() {
+    resultsContainer.innerHTML = "";
+    const slice = currentResults.slice(0, displayedCount);
+    for (const item of slice) {
+      const div = document.createElement("div");
+      div.className = "result-item";
+      div.tabIndex = 0;
+      div.setAttribute("role", "listitem");
+      div.innerHTML = `
+        <img src="${item.image || 'https://via.placeholder.com/50x40?text=?'}" alt="${item.title}" />
+        <div class="result-title" title="${item.title}">${item.title}</div>
+      `;
+      div.onclick = () => {
+        const url = `mrBuilder.html?category=${encodeURIComponent(item.category)}&id=${encodeURIComponent(item.id)}`;
+        window.location.href = url;
+      };
+      resultsContainer.appendChild(div);
+    }
+
+    if (displayedCount < currentResults.length) {
+      showMoreBtn.classList.add("visible");
+    } else {
+      showMoreBtn.classList.remove("visible");
+    }
+  }
+
+  searchInput.addEventListener("input", () => {
+    clearInterval(placeholderInterval);
+    searchInput.placeholder = "";
+    const query = searchInput.value.trim();
+    if (!query) {
+      resultsContainer.innerHTML = "";
+      showMoreBtn.classList.remove("visible");
+      placeholderInterval = animatePlaceholder(popularSearches, searchInput);
+      return;
+    }
+    currentResults = searchInData(query);
+    displayedCount = Math.min(PAGE_SIZE, currentResults.length);
+    renderResults();
+  });
+
+  showMoreBtn.addEventListener("click", () => {
+    displayedCount = Math.min(displayedCount + PAGE_SIZE, currentResults.length);
+    renderResults();
+  });
+
+  openSearchBtn.addEventListener("click", async () => {
+    if (!data) await loadData();
+    openModal();
+  });
+
+  modalCloseBtn.addEventListener("click", closeModal);
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modalSearch.classList.contains("open")) {
+      closeModal();
+    }
+  });
+</script>
+
+
+
+
+
+<br>
+<hr>
+<br>
+<h1 align="center">Вкладки</h1>
+<br>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 0 10px;">
+  <div style="position: relative; width: 100%; height: 200px; overflow: hidden; border-radius: 10px;">
+    <img src="https://www.sechenov.ru/upload/medialibrary/66b/KHroniki-velikikh-strazheniy.jpeg" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+    <div style="position: absolute; bottom: 0; width: 100%; background: rgba(255,255,255,0.7); color: black; padding: 10px; font-weight: 600; box-sizing: border-box; font-size: 16px;">
+      Великая отечетсвенная война
+    </div>
+  </div>
+</div>
+<br>
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 0 10px;">
+  <div style="position: relative; width: 100%; height: 200px; overflow: hidden; border-radius: 10px;">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTl7ApOAYKszjlnZUcstqORZQmyy_jTfaue0g&s" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+    <div style="position: absolute; bottom: 0; width: 100%; background: rgba(255,255,255,0.7); color: black; padding: 10px; font-weight: 600; box-sizing: border-box; font-size: 16px;">
+      Предмет быта
+    </div>
+  </div>
+</div>
+<br>
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 0 10px;">
+  <div style="position: relative; width: 100%; height: 200px; overflow: hidden; border-radius: 10px;">
+    <img src="https://fsd.multiurok.ru/html/2023/03/11/s_640cc4fdb7cdb/phpfidXdM_konspekt-rod-yazyk_html_2cfc16d8336dbcb2.jpg" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+    <div style="position: absolute; bottom: 0; width: 100%; background: rgba(255,255,255,0.7); color: black; padding: 10px; font-weight: 600; box-sizing: border-box; font-size: 16px;">
+      Предметы одежды
+    </div>
+  </div>
+</div>
+<br>
+<div class="card" style="max-width: 600px; margin: 0 auto; padding: 0 10px;">
+  <div style="position: relative; width: 100%; height: 200px; overflow: hidden; border-radius: 10px;">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8TBxw8Cuei9DWy0rUfXhCwn1ih-ROKXvDgg&s" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+    <div style="position: absolute; bottom: 0; width: 100%; background: rgba(255,255,255,0.7); color: black; padding: 10px; font-weight: 600; box-sizing: border-box; font-size: 16px;">
+      История страны в истории моей семьи
+    </div>
+  </div>
+</div>
+
+<br>
+<hr>
+
+<footer class="footer">
+    <div class="footer-links">
+        
+        <div class="footer-item">
+            <p>Бумажки деревяшки и прочие...</p>
+            <a href="accDash.html">Права пользователя</a>
+            <a href="accDash.html">Правила публикации контента</a>
+        </div>
+
+        <div class="footer-item">
+            <p>MuZeum4School - проект UDay©</p>
+            <a href="https://dmitryuday.github.io/UDay/">UDay</a>
+        </div>
+    </div>
+
+
+</footer>
+
+
+
+    
+</body>
+</html>

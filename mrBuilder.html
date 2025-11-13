@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Просмотр карточки</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f9f9f9;
+    color: #222;
+  }
+  .container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  }
+  h1 {
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+  p {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  button.back-btn {
+    margin-top: 25px;
+    padding: 10px 20px;
+    background: #58a5b9;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  button.back-btn:hover {
+    background: #417f8a;
+  }
+  .error {
+    color: red;
+    font-weight: 600;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="cardContainer">
+  <p>Загрузка данных...</p>
+</div>
+
+<script>
+  function getQueryParams() {
+    const params = {};
+    const queryString = window.location.search.substring(1);
+    const pairs = queryString.split("&");
+    for (let pair of pairs) {
+      const [key, value] = pair.split("=");
+      if (key && value) {
+        params[decodeURIComponent(key)] = decodeURIComponent(value);
+      }
+    }
+    return params;
+  }
+
+  function showError(message) {
+    const container = document.getElementById('cardContainer');
+    container.innerHTML = `<div class="error">${message}</div>`;
+  }
+
+  function renderCard(item) {
+    const container = document.getElementById('cardContainer');
+    container.innerHTML = `
+      <h1>${item.title || 'Без названия'}</h1>
+      <img src="${item.image || 'https://via.placeholder.com/600x400?text=Нет+изображения'}" alt="${item.title || ''}" />
+      <p>${item.text || 'Описание отсутствует'}</p>
+      <button class="back-btn" id="backBtn">Назад</button>
+    `;
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = "index.html";
+    });
+  }
+
+  (async () => {
+    const params = getQueryParams();
+
+    if (!params.id) {
+      showError('Некорректные параметры в URL: отсутствует id.');
+      return;
+    }
+
+    try {
+      const response = await fetch('data.json');
+      if (!response.ok) throw new Error('Не удалось загрузить data.json');
+
+      const data = await response.json();
+
+      let item = null;
+
+      // Ищем карточку по id во всех категориях
+      for (const category in data) {
+        if (!data.hasOwnProperty(category)) continue;
+        item = data[category].find(el => String(el.id) === params.id);
+        if (item) break;
+      }
+
+      if (!item) {
+        showError(`Карточка с id "${params.id}" не найдена.`);
+        return;
+      }
+
+      renderCard(item);
+
+    } catch (e) {
+      showError('Ошибка загрузки данных: ' + e.message);
+    }
+  })();
+</script>
+
+</body>
+</html>
